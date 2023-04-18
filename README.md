@@ -26,11 +26,12 @@ pip install dash
 pip install dash-bootstrap-components
 pip install pandas
 pip install plotly
-
+```
 2. Clone the repository or download the source code:
 
 ```bash
 git clone https://github.com/thoang02/Sales-analysis-visualization.git
+```
 
 3. Change to the project directory
 
@@ -38,14 +39,15 @@ git clone https://github.com/thoang02/Sales-analysis-visualization.git
 
 ```bash
 python vis-plotly.py
+```
 
 5. Open a web browser and navigate to http://127.0.0.1:8050/ to view the dashboard.
 
-### Deployment
+## Deployment
 
 To deploy the Sales Analysis Dashboard on a web server, follow the https://dash.plotly.com/deployment guide.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 
 
