@@ -1,0 +1,92 @@
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output, State, MATCH, ALL
+import dash_bootstrap_components as dbc
+
+# Read data
+data = pd.read_csv('sales-data.csv')
+data['Order Date'] = pd.to_datetime(data['Order Date'], format='%m/%d/%y %H:%M')
+data['Month'] = data['Order Date'].dt.month
+data['Year'] = data['Order Date'].dt.year
+data['Revenue'] = data['Quantity Ordered'] * data['Price Each']
+data['City'] = data['Purchase Address'].apply(lambda x: x.split(',')[1].strip())
+data['State'] = data['Purchase Address'].apply(lambda x: x.split(',')[2].split(' ')[1])
+
+# Initialize the app
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+# Define app layout
+app.layout = html.Div([
+    dbc.Row([
+        dbc.Col([
+            html.H2('Sales Analysis'),
+            html.P('Select the metrics to analyze:'),
+            dcc.Dropdown(
+                id='metrics-dropdown',
+                options=[
+                    {'label': 'Number of Orders', 'value': 'orders'},
+                    {'label': 'Revenue', 'value': 'revenue'},
+                    {'label': 'Revenue by Product', 'value': 'revenue_by_product'},
+                    {'label': 'Orders & Revenue by City & State', 'value': 'orders_revenue_by_city_state'},
+                    {'label': 'Units Sold by Product', 'value': 'units_sold'},
+                    {'label': 'Percentage of Product Sales', 'value': 'percentage_sales'},
+                ],
+                multi=True,
+                value=['orders', 'revenue']
+            ),
+            html.Div(id='graphs-container')
+        ])
+    ])
+])
+
+# Define callbacks
+@app.callback(
+    Output('graphs-container', 'children'),
+    Input('metrics-dropdown', 'value')
+)
+def update_graphs(selected_metrics):
+    graphs = []
+
+    if 'orders' in selected_metrics:
+        df_orders = data.groupby(['Year', 'Month']).size().reset_index(name='Orders')
+        fig_orders = px.line(df_orders, x='Month', y='Orders', title='Number of Orders per Month')
+        graphs.append(dcc.Graph(id='orders-graph', figure=fig_orders))
+
+    if 'revenue' in selected_metrics:
+        df_revenue = data.groupby(['Year', 'Month'])['Revenue'].sum().reset_index()
+        fig_revenue = px.line(df_revenue, x='Month', y='Revenue', title='Monthly Revenue')
+        graphs.append(dcc.Graph(id='revenue-graph', figure=fig_revenue))
+
+    if 'revenue_by_product' in selected_metrics:
+        df_revenue_by_product = data.groupby(['Year', 'Month', 'Product'])['Revenue'].sum().reset_index()
+        fig_revenue_by_product = px.line(df_revenue_by_product, x='Month', y='Revenue', color='Product', title='Monthly Revenue by Product')
+        graphs.append(dcc.Graph(id='revenue-by-product-graph', figure=fig_revenue_by_product))
+        
+    if 'orders_revenue_by_city_state' in selected_metrics:
+    df_orders_revenue_by_city_state = data.groupby(['Year', 'Month', 'City', 'State']).agg({'Revenue': 'sum', 'Order ID': 'count'}).reset_index()
+    fig_orders_revenue_by_city_state = px.scatter_geo(df_orders_revenue_by_city_state, lat='lat', lon='lon', size='Order ID', color='Revenue', hover_name='City', title='Orders & Revenue by City & State')
+    graphs.append(dcc.Graph(id='orders-revenue-by-city-state-graph', figure=fig_orders_revenue_by_city_state))
+    
+    if 'units_sold' in selected_metrics:
+    df_units_sold = data.groupby(['Year', 'Month', 'Product'])['Quantity Ordered'].sum().reset_index()
+    fig_units_sold = px.line(df_units_sold, x='Month', y='Quantity Ordered', color='Product', title='Units Sold per Month by Product')
+    graphs.append(dcc.Graph(id='units-sold-graph', figure=fig_units_sold))
+    
+    if 'percentage_sales' in selected_metrics:
+    df_percentage_sales = data.groupby(['Year', 'Month', 'Product']).agg({'Revenue': 'sum', 'Quantity Ordered': 'sum'}).reset_index()
+    df_percentage_sales['Percentage Revenue'] = df_percentage_sales.groupby(['Year', 'Month'])['Revenue'].apply(lambda x: x / x.sum() * 100)
+    df_percentage_sales['Percentage Quantity'] = df_percentage_sales.groupby(['Year', 'Month'])['Quantity Ordered'].apply(lambda x: x / x.sum() * 100)
+    fig_percentage_sales = px.bar(df_percentage_sales, x='Month', y='Percentage Revenue', color='Product', title='Percentage of Product Sales by Revenue')
+    graphs.append(dcc.Graph(id='percentage-sales-graph', figure=fig_percentage_sales))
+
+return graphs
+
+#Run the app
+
+if name == 'main':
+app.run_server(debug=True)
+
