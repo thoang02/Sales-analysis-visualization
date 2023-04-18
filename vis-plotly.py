@@ -19,14 +19,14 @@ data['City'] = data['Purchase Address'].apply(lambda x: x.split(',')[1].strip())
 data['State'] = data['Purchase Address'].apply(lambda x: x.split(',')[2].split(' ')[1])
 
 # Initialize the app
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA])
 
 # Define app layout
-app.layout = html.Div([
+app.layout = dbc.Container([
     dbc.Row([
         dbc.Col([
-            html.H2('Sales Analysis'),
-            html.P('Select the metrics to analyze:'),
+            html.H2('Sales Analysis', style={'marginTop': 20, 'marginBottom': 20}),
+            html.P('Select the metrics to analyze:', style={'marginBottom': 5}),
             # Create dropdpwn to view type of chart
             dcc.Dropdown(
                 id='metrics-dropdown',
@@ -41,7 +41,7 @@ app.layout = html.Div([
                 multi=True,
                 value=['orders', 'revenue']
             ),
-            html.P('Select the months to analyze:'),
+            html.P('Select the months to analyze:', style={'marginTop': 20, 'marginBottom': 5}),
             # Create check list to chose the period of time
             dcc.Checklist(
                 id='months-years-checklist',
@@ -62,10 +62,12 @@ app.layout = html.Div([
                 ],
                 value=['1_2019', '2_2019', '3_2019', '4_2019', '5_2019', '6_2019', '7_2019', '8_2019', '9_2019', '10_2019', '11_2019', '1_2019']
             ),
-            html.Div(id='graphs-container')
-        ])
-    ])
-])
+        ], width=4),
+        dbc.Col([
+            html.Div(id='graphs-container', style={'marginTop': 20})
+        ], width=8)
+        ], style={'marginTop': 20})
+        ], fluid=True)
 
 # Define callbacks
 @app.callback(
